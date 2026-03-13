@@ -19,7 +19,7 @@ def median_velocity(repo_dir, cap_hours=0, max_velocity=0,
         prev_sha, prev_ts, _prev_name = commits[i + 1]
 
         added, removed = diff_stat(repo_dir, prev_sha, sha)
-        delta = added + removed
+        delta = added - removed
 
         gap_sec = ts - prev_ts
         if gap_sec <= 0:
