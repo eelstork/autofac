@@ -41,17 +41,26 @@ def git_in(repo_dir, *args):
     return r.stdout.strip()
 
 
-def get_commits(repo_dir, author=""):
-    cmd = ["log", "--format=%H %at", "--no-merges"]
+def get_commits(repo_dir, author="", exclude_author=""):
+    cmd = ["log", "--format=%H %at %aN", "--no-merges"]
     if author:
         cmd += [f"--author={author}"]
     lines = git_in(repo_dir, *cmd).splitlines()
     commits = []
     for line in lines:
-        parts = line.split()
-        if len(parts) == 2:
-            commits.append((parts[0], int(parts[1])))
+        parts = line.split(None, 2)
+        if len(parts) >= 2:
+            name = parts[2] if len(parts) == 3 else ""
+            if exclude_author and exclude_author.lower() in name.lower():
+                continue
+            commits.append((parts[0], int(parts[1]), name))
     return commits
+
+
+def list_authors(repo_dir):
+    """Return sorted list of unique author names in the repo."""
+    lines = git_in(repo_dir, "log", "--format=%aN", "--no-merges").splitlines()
+    return sorted(set(line.strip() for line in lines if line.strip()))
 
 
 def diff_stat(repo_dir, parent, child):
