@@ -66,7 +66,7 @@ velocity, and prints the averaged result.
 Options:
 
 ```
---max-size=50       Skip repos larger than 50 MB (checked via API, before cloning)
+--max-size=50       Skip repos larger than 50 MB (default: 25, checked via API before cloning)
 --cap=72            Cap commit intervals at 72 hours
 --author="Jane"     Only count commits by a specific author
 --exclude-author="bot"  Exclude commits by author (comma-separated, substring match)

@@ -9,8 +9,9 @@ Repo sizes are checked via the GitHub API *before* cloning so that
 oversized repositories can be skipped without downloading them.
 
 Usage:
+  python3 autofac.py                                       # auto-detect via gh CLI
   python3 autofac.py <github-username>
-  python3 autofac.py <github-username> --max-size=50      # skip repos > 50 MB
+  python3 autofac.py <github-username> --max-size=50      # skip repos > 50 MB (default: 25)
   python3 autofac.py <github-username> --cap=72           # cap commit interval at 72h (off by default)
   python3 autofac.py <github-username> --workdir=/tmp/af  # clone into custom dir
   python3 autofac.py <github-username> --machine           # machine-assisted mode (higher velocity cap)
@@ -48,8 +49,8 @@ def main():
     )
     parser.add_argument("username", nargs="?", default="", help="GitHub username")
     parser.add_argument(
-        "--max-size", type=int, default=0,
-        help="Skip repos larger than this (MB). 0 = no limit.",
+        "--max-size", type=int, default=25,
+        help="Skip repos larger than this (MB). 0 = no limit (default: 25).",
     )
     parser.add_argument(
         "--cap", type=float, default=0,
@@ -125,8 +126,19 @@ def main():
         print(f"  dry             {args.dry}")
         sys.exit(0)
 
+    # Resolve username: explicit arg > gh CLI authenticated user
     if not args.username:
-        parser.error("username is required (unless using --defaults)")
+        try:
+            r = subprocess.run(
+                ["gh", "api", "user", "-q", ".login"],
+                capture_output=True, text=True,
+            )
+            if r.returncode == 0 and r.stdout.strip():
+                args.username = r.stdout.strip()
+        except FileNotFoundError:
+            pass  # gh not installed
+    if not args.username:
+        parser.error("username is required (or authenticate with gh CLI)")
 
     workdir = args.workdir or os.path.join(os.getcwd(), "autofac_work")
     if not args.keep:
