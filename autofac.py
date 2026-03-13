@@ -141,7 +141,7 @@ def main():
 
         med = median_velocity(dest, cap_hours=args.cap, author=args.author)
 
-        if med is not None:
+        if med is not None and med > 0:
             medians.append((name, med))
             print(f"         → median velocity: {med:.1f} lines/hour")
         else:

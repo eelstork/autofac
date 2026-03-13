@@ -1,44 +1,90 @@
 # autofac
 
-Cross-project velocity aggregator.
+autofac measures how fast code changes across a developer's public GitHub
+projects. It clones every non-fork repository for a given user, computes a
+median commit velocity for each project, and averages the results into a single
+number: **lines per hour**.
 
-Downloads all public repositories for a GitHub user, computes the median
-commit velocity (lines changed per hour) for each project, and outputs
-the averaged median velocity across all projects.
+## How velocity is calculated
 
-Repo sizes are checked via the GitHub API **before** cloning, so oversized
-repositories can be skipped without downloading them.
+For each repository, autofac walks the commit history (excluding merges) and
+looks at consecutive pairs of commits. For each pair it records:
+
+- **Lines changed** — the sum of lines added and lines removed
+  (`git diff --numstat`).
+- **Time elapsed** — the gap in seconds between the two commit timestamps.
+
+Dividing lines changed by hours elapsed gives a velocity for that interval. The
+per-project result is the **median** of all such interval velocities. The
+cross-project result is the **mean** of those medians.
+
+Intervals where the time gap is zero or negative are dropped (they'd produce
+infinite or meaningless values). Repos that yield zero velocity — no measurable
+output over time — are excluded from the final average entirely, so they don't
+drag the aggregate toward zero.
+
+### Why the median
+
+Commit histories are noisy. A developer might push a one-line typo fix seconds
+after a large refactor, or disappear for a month and return with a single
+commit. The median absorbs these outliers without distorting the picture the way
+an arithmetic mean would. It answers the question: *on a typical working
+interval, how many lines per hour were changing?*
+
+### What it doesn't capture
+
+Velocity in lines per hour is deliberately crude. It says nothing about the
+quality, complexity, or impact of the changes. A thousand lines of generated
+code count the same as ten lines of careful algorithm work. And because it
+relies on commit timestamps rather than actual working time, long gaps between
+commits (vacations, context switches, waiting on review) inflate the
+denominator and deflate the number.
+
+The `--cap` flag exists to partially address this: it clamps the maximum
+interval between two commits, so that a two-week vacation doesn't count as two
+weeks of slow coding. A reasonable cap (say, 72 hours) makes the metric more
+reflective of active development periods, though choosing the right value is
+inherently subjective.
 
 ## Usage
 
+### autofac (cross-project aggregator)
+
 ```
 python3 autofac.py <github-username>
-python3 autofac.py <github-username> --max-size=50000   # skip repos > 50 MB
-python3 autofac.py <github-username> --cap=72           # cap commit interval at 72h
-python3 autofac.py <github-username> --keep             # keep cloned repos
-python3 autofac.py <github-username> --include-forks    # include forks
-python3 autofac.py <github-username> --token=ghp_...    # use a GitHub token
 ```
 
-## Options
+Clones all public, non-fork repos for the user, computes per-project median
+velocity, and prints the averaged result.
 
-| Flag | Description |
-|---|---|
-| `--max-size=KB` | Skip repos larger than this (in KB). 0 = no limit. |
-| `--cap=HOURS` | Cap commit-interval hours (default: 168 = 1 week). |
-| `--author=NAME` | Filter commits by author name. |
-| `--workdir=DIR` | Directory to clone repos into. |
-| `--token=TOKEN` | GitHub personal access token (or set `GITHUB_TOKEN` env var). |
-| `--include-forks` | Include forked repositories (excluded by default). |
-| `--keep` | Keep cloned repos after analysis. |
+Options:
 
-## How it works
+```
+--max-size=50       Skip repos larger than 50 MB (checked via API, before cloning)
+--cap=72            Cap commit intervals at 72 hours
+--author="Jane"     Only count commits by a specific author
+--keep              Keep cloned repos on disk after analysis
+--dry               Estimate max disk usage without cloning anything
+--workdir=/tmp/af   Clone into a custom directory (default: ./autofac_work)
+--token=ghp_...     GitHub personal access token (or set GITHUB_TOKEN env var)
+```
 
-1. Fetches the repo list from GitHub, including the `size` field (KB)
-2. Skips repos exceeding `--max-size` **without cloning**
-3. Clones each remaining repo and analyzes the full commit history
-4. For each non-merge commit interval, computes `velocity = delta / capped_hours`
-   where `delta = lines added + removed` and intervals are capped to avoid
-   dormant periods diluting the metric
-5. Takes the **median** velocity per project
-6. Outputs the **mean of medians** across all projects
+`--dry` is useful before a large run. Combined with `--keep` it reports the
+total size of all repos that would be retained; without `--keep` it reports
+the size of the largest single repo (since repos are cloned and deleted one at
+a time).
+
+### core.py (single-repo analysis)
+
+`median_velocity` can be used directly on any local git repository:
+
+```python
+from core import median_velocity
+
+vel = median_velocity("/path/to/repo", cap_hours=72, author="Jane")
+if vel is not None:
+    print(f"{vel:.1f} lines/hour")
+```
+
+Returns `None` if the repo has fewer than two qualifying commits, or if no
+intervals produced a measurable velocity.
