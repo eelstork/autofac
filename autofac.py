@@ -50,8 +50,8 @@ def main():
         help="Exclude commits by author name (comma-separated, substring match)",
     )
     parser.add_argument(
-        "--max-velocity", type=float, default=120,
-        help="Discard intervals above this velocity in lines/hour (default: 120).",
+        "--max-velocity", type=float, default=1000,
+        help="Discard intervals above this velocity in lines/hour (default: 1000).",
     )
     parser.add_argument(
         "--workdir", default="",
@@ -106,6 +106,8 @@ def main():
         parser.error("username is required (unless using --defaults)")
 
     workdir = args.workdir or os.path.join(os.getcwd(), "autofac_work")
+    if not args.keep:
+        shutil.rmtree(workdir, ignore_errors=True)
     os.makedirs(workdir, exist_ok=True)
 
     # ── 1. Fetch repo list ──────────────────────────────────────────────
