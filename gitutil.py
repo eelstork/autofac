@@ -25,12 +25,24 @@ def github_get(url, token=None):
 
 
 def list_repos(username, token=None):
-    """Return list of public repos for *username* via the GitHub API.
+    """Return list of repos for *username* via the GitHub API.
+
+    When *token* is provided, uses the authenticated endpoint which
+    includes private repositories.  Without a token, only public repos
+    are returned.
 
     Each item has at least 'name', 'clone_url', 'size' (KB), 'fork'.
     """
-    url = f"https://api.github.com/users/{username}/repos?per_page=100&type=owner"
-    return github_get(url, token=token)
+    if token:
+        # Authenticated: gets all repos (public + private) for the token owner
+        url = f"https://api.github.com/user/repos?per_page=100&affiliation=owner"
+        all_repos = github_get(url, token=token)
+        # Filter to the requested username (the token may belong to them,
+        # but this keeps behaviour predictable)
+        return [r for r in all_repos if r["owner"]["login"].lower() == username.lower()]
+    else:
+        url = f"https://api.github.com/users/{username}/repos?per_page=100&type=owner"
+        return github_get(url, token=None)
 
 
 def git_in(repo_dir, *args):
