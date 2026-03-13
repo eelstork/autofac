@@ -106,6 +106,8 @@ def main():
         parser.error("username is required (unless using --defaults)")
 
     workdir = args.workdir or os.path.join(os.getcwd(), "autofac_work")
+    if not args.keep:
+        shutil.rmtree(workdir, ignore_errors=True)
     os.makedirs(workdir, exist_ok=True)
 
     # ── 1. Fetch repo list ──────────────────────────────────────────────
