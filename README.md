@@ -70,7 +70,8 @@ Options:
 --cap=72            Cap commit intervals at 72 hours
 --author="Jane"     Only count commits by a specific author
 --exclude-author="bot"  Exclude commits by author (comma-separated, substring match)
---max-velocity=5000 Discard intervals above this velocity in lines/hour (0 = disabled, default: 0)
+--max-velocity=5000 Discard intervals above this velocity in lines/hour (0 = disabled, default: 100)
+--machine           Machine-assisted mode (sets --max-velocity default to 10000)
 --keep              Keep cloned repos on disk after analysis
 --dry               Estimate max disk usage without cloning anything
 --workdir=/tmp/af   Clone into a custom directory (default: ./autofac_work)

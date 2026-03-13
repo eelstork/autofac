@@ -13,6 +13,7 @@ Usage:
   python3 autofac.py <github-username> --max-size=50      # skip repos > 50 MB
   python3 autofac.py <github-username> --cap=72           # cap commit interval at 72h (off by default)
   python3 autofac.py <github-username> --workdir=/tmp/af  # clone into custom dir
+  python3 autofac.py <github-username> --machine           # machine-assisted mode (higher velocity cap)
   python3 autofac.py <github-username> --token=ghp_...    # use a GitHub token
 """
 
@@ -63,8 +64,12 @@ def main():
         help="Exclude commits by author name (comma-separated, substring match)",
     )
     parser.add_argument(
-        "--max-velocity", type=float, default=0,
-        help="Discard intervals above this velocity in lines/hour (0 = disabled, default: 0).",
+        "--max-velocity", type=float, default=None,
+        help="Discard intervals above this velocity in lines/hour (0 = disabled, default: 100, or 10000 with --machine).",
+    )
+    parser.add_argument(
+        "--machine", action="store_true",
+        help="Machine-assisted mode (sets --max-velocity default to 10000)",
     )
     parser.add_argument(
         "--workdir", default="",
@@ -101,6 +106,10 @@ def main():
         except FileNotFoundError:
             pass  # gh not installed
 
+    # Resolve --max-velocity default based on --machine flag
+    if args.max_velocity is None:
+        args.max_velocity = 10000 if args.machine else 100
+
     # ── 0. Show defaults ────────────────────────────────────────────────
     if args.defaults:
         print("Default parameters:")
@@ -109,6 +118,7 @@ def main():
         print(f"  author          {args.author or '(all)'}")
         print(f"  exclude-author  {args.exclude_author or '(none)'}")
         print(f"  max-velocity    {args.max_velocity}")
+        print(f"  machine         {args.machine}")
         print(f"  workdir         {args.workdir or './autofac_work'}")
         print(f"  token           {'set' if args.token else 'not set'}")
         print(f"  keep            {args.keep}")
