@@ -31,7 +31,7 @@ def main():
     parser = argparse.ArgumentParser(
         description="Cross-project velocity aggregator",
     )
-    parser.add_argument("username", help="GitHub username")
+    parser.add_argument("username", nargs="?", default="", help="GitHub username")
     parser.add_argument(
         "--max-size", type=int, default=0,
         help="Skip repos larger than this (MB). 0 = no limit.",
@@ -64,7 +64,27 @@ def main():
         "--dry", action="store_true",
         help="Estimate max disk usage without cloning anything",
     )
+    parser.add_argument(
+        "--defaults", action="store_true",
+        help="Display default parameter values and exit",
+    )
     args = parser.parse_args()
+
+    # ── 0. Show defaults ────────────────────────────────────────────────
+    if args.defaults:
+        print("Default parameters:")
+        print(f"  max-size        {args.max_size or 'no limit'}")
+        print(f"  cap             {args.cap or 'no cap'}")
+        print(f"  author          {args.author or '(all)'}")
+        print(f"  exclude-author  {args.exclude_author or '(none)'}")
+        print(f"  workdir         {args.workdir or './autofac_work'}")
+        print(f"  token           {'set' if args.token else 'not set'}")
+        print(f"  keep            {args.keep}")
+        print(f"  dry             {args.dry}")
+        sys.exit(0)
+
+    if not args.username:
+        parser.error("username is required (unless using --defaults)")
 
     workdir = args.workdir or os.path.join(os.getcwd(), "autofac_work")
     os.makedirs(workdir, exist_ok=True)
