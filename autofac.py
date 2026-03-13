@@ -10,7 +10,7 @@ oversized repositories can be skipped without downloading them.
 
 Usage:
   python3 autofac.py <github-username>
-  python3 autofac.py <github-username> --max-size=50      # skip repos > 50 MB
+  python3 autofac.py <github-username> --max-size=50      # skip repos > 50 MB (default: 25)
   python3 autofac.py <github-username> --cap=72           # cap commit interval at 72h (off by default)
   python3 autofac.py <github-username> --workdir=/tmp/af  # clone into custom dir
   python3 autofac.py <github-username> --machine           # machine-assisted mode (higher velocity cap)
@@ -48,8 +48,8 @@ def main():
     )
     parser.add_argument("username", nargs="?", default="", help="GitHub username")
     parser.add_argument(
-        "--max-size", type=int, default=0,
-        help="Skip repos larger than this (MB). 0 = no limit.",
+        "--max-size", type=int, default=25,
+        help="Skip repos larger than this (MB). 0 = no limit (default: 25).",
     )
     parser.add_argument(
         "--cap", type=float, default=0,
