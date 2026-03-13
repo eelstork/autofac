@@ -57,13 +57,14 @@ def get_commits(repo_dir, author="", exclude_author=""):
     cmd = ["log", "--format=%H %at %aN", "--no-merges"]
     if author:
         cmd += [f"--author={author}"]
+    excludes = [e.strip().lower() for e in exclude_author.split(",") if e.strip()] if exclude_author else []
     lines = git_in(repo_dir, *cmd).splitlines()
     commits = []
     for line in lines:
         parts = line.split(None, 2)
         if len(parts) >= 2:
             name = parts[2] if len(parts) == 3 else ""
-            if exclude_author and exclude_author.lower() in name.lower():
+            if excludes and any(ex in name.lower() for ex in excludes):
                 continue
             commits.append((parts[0], int(parts[1]), name))
     return commits
