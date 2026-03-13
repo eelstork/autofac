@@ -89,6 +89,10 @@ def main():
         help="Estimate max disk usage without cloning anything",
     )
     parser.add_argument(
+        "--additive", action="store_true",
+        help="Count total churn (added + removed) instead of net lines (added - removed)",
+    )
+    parser.add_argument(
         "--defaults", action="store_true",
         help="Display default parameter values and exit",
     )
@@ -229,6 +233,7 @@ def main():
         med = median_velocity(
             dest, cap_hours=args.cap, max_velocity=args.max_velocity,
             author=args.author, exclude_author=args.exclude_author,
+            additive=args.additive,
         )
 
         if med is not None and med > 0:
