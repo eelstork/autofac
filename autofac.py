@@ -56,6 +56,10 @@ def main():
         "--keep", action="store_true",
         help="Keep cloned repos after analysis (deleted by default)",
     )
+    parser.add_argument(
+        "--dry", action="store_true",
+        help="Estimate max disk usage without cloning anything",
+    )
     args = parser.parse_args()
 
     workdir = args.workdir or os.path.join(os.getcwd(), "autofac_work")
@@ -75,11 +79,10 @@ def main():
 
     print(f"Found {len(repos)} repo(s).\n")
 
-    # ── 2. Filter & process ─────────────────────────────────────────────
-    medians = []
+    # ── 2. Filter repos ────────────────────────────────────────────────
+    filtered = []
     skipped_size = 0
     skipped_fork = 0
-    skipped_empty = 0
 
     for repo in sorted(repos, key=lambda r: r["name"]):
         name = repo["name"]
@@ -98,6 +101,34 @@ def main():
             skipped_size += 1
             continue
 
+        filtered.append(repo)
+
+    # ── 2b. Dry run — estimate max disk usage ──────────────────────────
+    if args.dry:
+        sizes_kb = [r.get("size", 0) for r in filtered]
+        if not sizes_kb:
+            print("No repos to process.")
+            sys.exit(0)
+
+        if args.keep:
+            max_kb = sum(sizes_kb)
+            label = "total (--keep)"
+        else:
+            max_kb = max(sizes_kb)
+            label = "largest single repo"
+
+        max_mb = max_kb / 1024
+        print(f"Repos to process: {len(filtered)}")
+        print(f"Max disk usage ({label}): {max_mb:,.1f} MB")
+        sys.exit(0)
+
+    # ── 3. Clone & process ─────────────────────────────────────────────
+    medians = []
+    skipped_empty = 0
+
+    for repo in filtered:
+        name = repo["name"]
+        size_kb = repo.get("size", 0)
         dest = os.path.join(workdir, name)
         already_cloned = os.path.isdir(dest)
 
@@ -121,7 +152,7 @@ def main():
         if not args.keep and not already_cloned:
             shutil.rmtree(dest, ignore_errors=True)
 
-    # ── 3. Aggregate ────────────────────────────────────────────────────
+    # ── 4. Aggregate ────────────────────────────────────────────────────
     print("\n" + "=" * 64)
     if medians:
         values = [v for _, v in medians]
