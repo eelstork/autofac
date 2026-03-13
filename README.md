@@ -18,6 +18,12 @@ Dividing lines changed by hours elapsed gives a velocity for that interval. The
 per-project result is the **median** of all such interval velocities. The
 cross-project result is the **mean** of those medians.
 
+$$v_i = \frac{\Delta L_i}{\Delta t_i} \qquad V_{\text{project}} = \operatorname{median}(v_1, v_2, \ldots, v_n) \qquad V = \frac{1}{P}\sum_{p=1}^{P} V_p$$
+
+where $\Delta L_i$ is lines added + removed in interval $i$, $\Delta t_i$ is
+the elapsed time in hours, and $P$ is the number of projects with nonzero
+velocity.
+
 Intervals where the time gap is zero or negative are dropped (they'd produce
 infinite or meaningless values). Repos that yield zero velocity — no measurable
 output over time — are excluded from the final average entirely, so they don't
