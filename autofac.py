@@ -18,11 +18,24 @@ Usage:
 
 import argparse
 import os
+import stat
 import shutil
 import statistics
 import subprocess
 import sys
 import urllib.error
+
+
+def _force_remove_readonly(func, path, _exc_info):
+    """Handle read-only files (common in .git on Windows)."""
+    os.chmod(path, stat.S_IWRITE)
+    func(path)
+
+
+def force_rmtree(path):
+    """Remove a directory tree, forcing read-only files writable first."""
+    if os.path.isdir(path):
+        shutil.rmtree(path, onerror=_force_remove_readonly)
 
 from gitutil import list_repos, clone_repo, list_authors
 from core import median_velocity
@@ -107,7 +120,7 @@ def main():
 
     workdir = args.workdir or os.path.join(os.getcwd(), "autofac_work")
     if not args.keep:
-        shutil.rmtree(workdir, ignore_errors=True)
+        force_rmtree(workdir)
     os.makedirs(workdir, exist_ok=True)
 
     # ── 1. Fetch repo list ──────────────────────────────────────────────
@@ -205,7 +218,7 @@ def main():
 
         # Clean up unless --keep
         if not args.keep:
-            shutil.rmtree(dest, ignore_errors=True)
+            force_rmtree(dest)
 
     # ── 4. Aggregate ────────────────────────────────────────────────────
     print("\n" + "=" * 64)
@@ -241,7 +254,7 @@ def main():
 
     # Cleanup workdir if empty
     if not args.keep:
-        shutil.rmtree(workdir, ignore_errors=True)
+        force_rmtree(workdir)
 
 
 if __name__ == "__main__":
