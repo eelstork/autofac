@@ -63,8 +63,8 @@ def main():
         help="Exclude commits by author name (comma-separated, substring match)",
     )
     parser.add_argument(
-        "--max-velocity", type=float, default=1000,
-        help="Discard intervals above this velocity in lines/hour (default: 1000).",
+        "--max-velocity", type=float, default=0,
+        help="Discard intervals above this velocity in lines/hour (0 = disabled, default: 0).",
     )
     parser.add_argument(
         "--workdir", default="",
