@@ -6,8 +6,12 @@ from gitutil import get_commits, diff_stat, list_authors
 
 
 def median_velocity(repo_dir, cap_hours=0, max_velocity=0,
-                    author="", exclude_author=""):
-    """Return the median velocity (lines/hour) for *repo_dir*, or None."""
+                    author="", exclude_author="", gross=False):
+    """Return the median velocity (lines/hour) for *repo_dir*, or None.
+
+    When *gross* is True, uses total lines added (speed) instead of
+    net lines (added - removed).
+    """
     commits = get_commits(repo_dir, author=author, exclude_author=exclude_author)
     if len(commits) < 2:
         return None
@@ -19,7 +23,7 @@ def median_velocity(repo_dir, cap_hours=0, max_velocity=0,
         prev_sha, prev_ts, _prev_name = commits[i + 1]
 
         added, removed = diff_stat(repo_dir, prev_sha, sha)
-        delta = added - removed
+        delta = added if gross else added - removed
 
         gap_sec = ts - prev_ts
         if gap_sec <= 0:
