@@ -97,3 +97,9 @@ if vel is not None:
 
 Returns `None` if the repo has fewer than two qualifying commits, or if no
 intervals produced a measurable velocity.
+
+## Interpreting the modes
+
+- `autofac.py --machine` — roughly approximates AI-assisted velocity
+- `autofac.py` (default) — roughly approximates personal velocity
+  (unless your repos contain many foreign commits)
