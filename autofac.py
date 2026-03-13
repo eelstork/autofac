@@ -231,9 +231,13 @@ def main():
         print(f"Skipped (empty): {skipped_empty}")
 
     if all_authors:
-        print(f"\nAuthors ({len(all_authors)}):")
-        for a in sorted(all_authors):
-            print(f"  {a}")
+        excluded = [x.strip() for x in args.exclude_author.split(",") if x.strip()] if args.exclude_author else []
+        print(f"Authors ({len(all_authors)}):")
+        for a in sorted(all_authors, key=str.casefold):
+            if any(ex.lower() in a.lower() for ex in excluded):
+                print(f"  {a} [ex.]")
+            else:
+                print(f"  {a}")
 
     # Cleanup workdir if empty
     if not args.keep:
