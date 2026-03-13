@@ -204,7 +204,7 @@ def main():
             print(f"         → too few commits, skipped")
 
         # Clean up unless --keep
-        if not args.keep and not already_cloned:
+        if not args.keep:
             shutil.rmtree(dest, ignore_errors=True)
 
     # ── 4. Aggregate ────────────────────────────────────────────────────
