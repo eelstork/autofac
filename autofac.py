@@ -10,8 +10,8 @@ oversized repositories can be skipped without downloading them.
 
 Usage:
   python3 autofac.py <github-username>
-  python3 autofac.py <github-username> --max-size=50000   # skip repos > 50 MB
-  python3 autofac.py <github-username> --cap=72           # cap commit interval at 72h
+  python3 autofac.py <github-username> --max-size=50      # skip repos > 50 MB
+  python3 autofac.py <github-username> --cap=72           # cap commit interval at 72h (off by default)
   python3 autofac.py <github-username> --workdir=/tmp/af  # clone into custom dir
   python3 autofac.py <github-username> --token=ghp_...    # use a GitHub token
 """
@@ -96,13 +96,13 @@ def diff_stat(repo_dir, parent, child):
     return added, removed
 
 
-def median_velocity(repo_dir, cap_hours=168, author=""):
+def median_velocity(repo_dir, cap_hours=0, author=""):
     """Return the median velocity (lines/hour) for *repo_dir*, or None."""
     commits = get_commits(repo_dir, author=author)
     if len(commits) < 2:
         return None
 
-    cap_sec = cap_hours * 3600
+    cap_sec = cap_hours * 3600 if cap_hours > 0 else 0
     velocities = []
     for i in range(len(commits) - 1):
         sha, ts = commits[i]
@@ -112,10 +112,15 @@ def median_velocity(repo_dir, cap_hours=168, author=""):
         delta = added + removed
 
         gap_sec = ts - prev_ts
-        capped = min(gap_sec, cap_sec) if gap_sec > 0 else 0
-        capped_hours = capped / 3600
+        if gap_sec <= 0:
+            interval = 0
+        elif cap_sec > 0:
+            interval = min(gap_sec, cap_sec)
+        else:
+            interval = gap_sec
+        capped_hours = interval / 3600
 
-        if capped > 0:
+        if interval > 0:
             velocities.append(delta / capped_hours)
         elif delta > 0:
             pass  # skip infinite velocity intervals
@@ -143,11 +148,11 @@ def main():
     parser.add_argument("username", help="GitHub username")
     parser.add_argument(
         "--max-size", type=int, default=0,
-        help="Skip repos larger than this (KB). 0 = no limit.",
+        help="Skip repos larger than this (MB). 0 = no limit.",
     )
     parser.add_argument(
-        "--cap", type=float, default=168,
-        help="Cap commit-interval hours (default 168 = 1 week)",
+        "--cap", type=float, default=0,
+        help="Cap commit-interval hours. 0 = no cap (default).",
     )
     parser.add_argument(
         "--author", default="",
@@ -160,10 +165,6 @@ def main():
     parser.add_argument(
         "--token", default=os.environ.get("GITHUB_TOKEN", ""),
         help="GitHub personal access token (or set GITHUB_TOKEN)",
-    )
-    parser.add_argument(
-        "--include-forks", action="store_true",
-        help="Include forked repositories (excluded by default)",
     )
     parser.add_argument(
         "--keep", action="store_true",
@@ -199,14 +200,15 @@ def main():
         size_kb = repo.get("size", 0)
         is_fork = repo.get("fork", False)
 
-        # Skip forks unless asked
-        if is_fork and not args.include_forks:
+        # Always skip forks
+        if is_fork:
             skipped_fork += 1
             continue
 
         # Size gate (checked *before* cloning)
-        if args.max_size and size_kb > args.max_size:
-            print(f"  SKIP  {name:30s}  {size_kb:>8,} KB  (exceeds --max-size)")
+        max_size_kb = args.max_size * 1024
+        if args.max_size and size_kb > max_size_kb:
+            print(f"  SKIP  {name:30s}  {size_kb // 1024:>6,} MB  (exceeds --max-size)")
             skipped_size += 1
             continue
 
