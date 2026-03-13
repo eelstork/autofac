@@ -20,6 +20,7 @@ import argparse
 import os
 import shutil
 import statistics
+import subprocess
 import sys
 import urllib.error
 
@@ -53,8 +54,8 @@ def main():
         help="Directory to clone repos into (default: ./autofac_work)",
     )
     parser.add_argument(
-        "--token", default=os.environ.get("GITHUB_TOKEN", ""),
-        help="GitHub personal access token (or set GITHUB_TOKEN)",
+        "--token", default="",
+        help="GitHub token (default: GITHUB_TOKEN env var, or gh auth token)",
     )
     parser.add_argument(
         "--keep", action="store_true",
@@ -69,6 +70,19 @@ def main():
         help="Display default parameter values and exit",
     )
     args = parser.parse_args()
+
+    # Resolve token: explicit flag > env var > gh CLI
+    if not args.token:
+        args.token = os.environ.get("GITHUB_TOKEN", "")
+    if not args.token:
+        try:
+            r = subprocess.run(
+                ["gh", "auth", "token"], capture_output=True, text=True,
+            )
+            if r.returncode == 0 and r.stdout.strip():
+                args.token = r.stdout.strip()
+        except FileNotFoundError:
+            pass  # gh not installed
 
     # ── 0. Show defaults ────────────────────────────────────────────────
     if args.defaults:
