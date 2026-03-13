@@ -126,6 +126,28 @@ def main():
         print(f"  dry             {args.dry}")
         sys.exit(0)
 
+    # ── Local repo mode ───────────────────────────────────────────────
+    # If we're inside a git repo and no username was given, just analyse
+    # the current repo and exit.
+    if not args.username:
+        r = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            capture_output=True, text=True,
+        )
+        if r.returncode == 0 and r.stdout.strip():
+            repo_dir = r.stdout.strip()
+            print(f"Analysing local repo: {repo_dir}")
+            med = median_velocity(
+                repo_dir, cap_hours=args.cap,
+                max_velocity=args.max_velocity,
+                author=args.author, exclude_author=args.exclude_author,
+            )
+            if med is not None and med > 0:
+                print(f"Median velocity: {med:.1f} lines/hour")
+            else:
+                print("Too few commits for a velocity estimate.")
+            sys.exit(0)
+
     # Resolve username: explicit arg > gh CLI authenticated user
     if not args.username:
         try:
@@ -139,6 +161,14 @@ def main():
             pass  # gh not installed
     if not args.username:
         parser.error("username is required (or authenticate with gh CLI)")
+
+    # ── Confirm cross-repo operation ──────────────────────────────────
+    answer = input(
+        "When running outside a git repository, autofac will evaluate "
+        "across all your github repositories. Continue? [yes/no] "
+    )
+    if answer.strip().lower() != "yes":
+        sys.exit(0)
 
     workdir = args.workdir or os.path.join(os.getcwd(), "autofac_work")
     if not args.keep:
