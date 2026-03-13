@@ -18,6 +18,12 @@ Dividing lines changed by hours elapsed gives a velocity for that interval. The
 per-project result is the **median** of all such interval velocities. The
 cross-project result is the **mean** of those medians.
 
+$$v_i = \frac{\Delta L_i}{\Delta t_i} \qquad V_{\text{project}} = \operatorname{median}(v_1, v_2, \ldots, v_n) \qquad V = \frac{1}{P}\sum_{p=1}^{P} V_p$$
+
+where $\Delta L_i$ is lines added + removed in interval $i$, $\Delta t_i$ is
+the elapsed time in hours, and $P$ is the number of projects with nonzero
+velocity.
+
 Intervals where the time gap is zero or negative are dropped (they'd produce
 infinite or meaningless values). Repos that yield zero velocity — no measurable
 output over time — are excluded from the final average entirely, so they don't
@@ -63,6 +69,9 @@ Options:
 --max-size=50       Skip repos larger than 50 MB (checked via API, before cloning)
 --cap=72            Cap commit intervals at 72 hours
 --author="Jane"     Only count commits by a specific author
+--exclude-author="bot"  Exclude commits by author (comma-separated, substring match)
+--max-velocity=5000 Discard intervals above this velocity in lines/hour (0 = disabled, default: 100)
+--machine           Machine-assisted mode (sets --max-velocity default to 10000)
 --keep              Keep cloned repos on disk after analysis
 --dry               Estimate max disk usage without cloning anything
 --workdir=/tmp/af   Clone into a custom directory (default: ./autofac_work)
