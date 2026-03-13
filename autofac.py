@@ -23,7 +23,7 @@ import statistics
 import sys
 import urllib.error
 
-from gitutil import list_repos, clone_repo
+from gitutil import list_repos, clone_repo, list_authors
 from core import median_velocity
 
 
@@ -43,6 +43,10 @@ def main():
     parser.add_argument(
         "--author", default="",
         help="Filter commits by author name",
+    )
+    parser.add_argument(
+        "--exclude-author", default="",
+        help="Exclude commits by author name (substring match)",
     )
     parser.add_argument(
         "--workdir", default="",
@@ -124,6 +128,7 @@ def main():
 
     # ── 3. Clone & process ─────────────────────────────────────────────
     medians = []
+    all_authors = set()
     skipped_empty = 0
 
     for repo in filtered:
@@ -139,7 +144,16 @@ def main():
         else:
             print(f"  EXIST {name:30s}  {size_kb:>8,} KB")
 
-        med = median_velocity(dest, cap_hours=args.cap, author=args.author)
+        # Collect authors seen in this repo
+        authors = list_authors(dest)
+        all_authors.update(authors)
+        if authors:
+            print(f"         authors: {', '.join(authors)}")
+
+        med = median_velocity(
+            dest, cap_hours=args.cap,
+            author=args.author, exclude_author=args.exclude_author,
+        )
 
         if med is not None and med > 0:
             medians.append((name, med))
@@ -174,6 +188,11 @@ def main():
         print(f"Skipped (fork):  {skipped_fork}")
     if skipped_empty:
         print(f"Skipped (empty): {skipped_empty}")
+
+    if all_authors:
+        print(f"\nAuthors ({len(all_authors)}):")
+        for a in sorted(all_authors):
+            print(f"  {a}")
 
     # Cleanup workdir if empty
     if not args.keep:

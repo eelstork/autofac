@@ -2,20 +2,20 @@
 
 import statistics
 
-from gitutil import get_commits, diff_stat
+from gitutil import get_commits, diff_stat, list_authors
 
 
-def median_velocity(repo_dir, cap_hours=0, author=""):
+def median_velocity(repo_dir, cap_hours=0, author="", exclude_author=""):
     """Return the median velocity (lines/hour) for *repo_dir*, or None."""
-    commits = get_commits(repo_dir, author=author)
+    commits = get_commits(repo_dir, author=author, exclude_author=exclude_author)
     if len(commits) < 2:
         return None
 
     cap_sec = cap_hours * 3600 if cap_hours > 0 else 0
     velocities = []
     for i in range(len(commits) - 1):
-        sha, ts = commits[i]
-        prev_sha, prev_ts = commits[i + 1]
+        sha, ts, _name = commits[i]
+        prev_sha, prev_ts, _prev_name = commits[i + 1]
 
         added, removed = diff_stat(repo_dir, prev_sha, sha)
         delta = added + removed
