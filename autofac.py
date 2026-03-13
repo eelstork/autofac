@@ -47,7 +47,11 @@ def main():
     )
     parser.add_argument(
         "--exclude-author", default="",
-        help="Exclude commits by author name (substring match)",
+        help="Exclude commits by author name (comma-separated, substring match)",
+    )
+    parser.add_argument(
+        "--max-velocity", type=float, default=120,
+        help="Discard intervals above this velocity in lines/hour (default: 120).",
     )
     parser.add_argument(
         "--workdir", default="",
@@ -91,6 +95,7 @@ def main():
         print(f"  cap             {args.cap or 'no cap'}")
         print(f"  author          {args.author or '(all)'}")
         print(f"  exclude-author  {args.exclude_author or '(none)'}")
+        print(f"  max-velocity    {args.max_velocity}")
         print(f"  workdir         {args.workdir or './autofac_work'}")
         print(f"  token           {'set' if args.token else 'not set'}")
         print(f"  keep            {args.keep}")
@@ -185,7 +190,7 @@ def main():
             print(f"         authors: {', '.join(authors)}")
 
         med = median_velocity(
-            dest, cap_hours=args.cap,
+            dest, cap_hours=args.cap, max_velocity=args.max_velocity,
             author=args.author, exclude_author=args.exclude_author,
         )
 

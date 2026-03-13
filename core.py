@@ -5,7 +5,8 @@ import statistics
 from gitutil import get_commits, diff_stat, list_authors
 
 
-def median_velocity(repo_dir, cap_hours=0, author="", exclude_author=""):
+def median_velocity(repo_dir, cap_hours=0, max_velocity=0,
+                    author="", exclude_author=""):
     """Return the median velocity (lines/hour) for *repo_dir*, or None."""
     commits = get_commits(repo_dir, author=author, exclude_author=exclude_author)
     if len(commits) < 2:
@@ -30,7 +31,10 @@ def median_velocity(repo_dir, cap_hours=0, author="", exclude_author=""):
         capped_hours = interval / 3600
 
         if interval > 0:
-            velocities.append(delta / capped_hours)
+            vel = delta / capped_hours
+            if max_velocity > 0 and vel > max_velocity:
+                continue  # likely non-human (media files, generated code)
+            velocities.append(vel)
         elif delta > 0:
             pass  # skip infinite velocity intervals
 
