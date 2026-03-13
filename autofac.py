@@ -235,10 +235,7 @@ def main():
 
     # Cleanup workdir if empty
     if not args.keep:
-        try:
-            os.rmdir(workdir)
-        except OSError:
-            pass
+        shutil.rmtree(workdir, ignore_errors=True)
 
 
 if __name__ == "__main__":
