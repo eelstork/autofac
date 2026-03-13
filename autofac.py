@@ -188,7 +188,7 @@ def main():
         # Collect authors seen in this repo
         authors = list_authors(dest)
         all_authors.update(authors)
-        if authors:
+        if authors and not args.author:
             print(f"         authors: {', '.join(authors)}")
 
         med = median_velocity(
@@ -230,7 +230,7 @@ def main():
     if skipped_empty:
         print(f"Skipped (empty): {skipped_empty}")
 
-    if all_authors:
+    if all_authors and not args.author:
         excluded = [x.strip() for x in args.exclude_author.split(",") if x.strip()] if args.exclude_author else []
         print(f"Authors ({len(all_authors)}):")
         for a in sorted(all_authors, key=str.casefold):
