@@ -19,7 +19,7 @@ per-project result is the **median** of all such interval velocities. The
 cross-project result is the **mean** of those medians.
 
 ```math
-v_i = \frac{\Delta L_i}{\Delta t_i} \qquad V_{\text{project}} = \operatorname{median}(v_1, v_2, \ldots, v_n) \qquad V = \frac{1}{P}\sum_{p=1}^{P} V_p
+v_i = \frac{\Delta L_i}{\Delta t_i} \qquad V_{\text{project}} = \text{median}(v_1, v_2, \ldots, v_n) \qquad V = \frac{1}{P}\sum_{p=1}^{P} V_p
 ```
 
 where $\Delta L_i$ is lines added + removed in interval $i$, $\Delta t_i$ is
